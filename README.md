@@ -1,2 +1,12 @@
 # IIS_project
-Project repo for IIS Assignment 2
+Project Status:
+
+Technology Stack:
+
+Running or inspecting the work:
+
+Development record:
+
+AI assistance:
+
+Additional Files:
