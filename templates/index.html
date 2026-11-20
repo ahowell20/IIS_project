@@ -9,6 +9,7 @@
     <style>
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .drag-over { background-color: #e0e7ff !important; border: 2px dashed #4f46e5 !important; }
     </style>
 </head>
 <body class="bg-slate-100 font-sans h-screen flex flex-col overflow-hidden text-slate-800">
@@ -17,7 +18,7 @@
     <header class="bg-slate-900 text-white h-14 px-6 flex items-center justify-between shadow-md">
         <div class="flex items-center space-x-3">
             <i class="fa-solid fa-inbox text-indigo-400 text-xl"></i>
-            <span class="font-semibold text-lg tracking-wide">MailFlow <span class="text-xs text-indigo-300 font-normal ml-1">AI Assistant</span></span>
+            <span class="font-semibold text-lg tracking-wide">MailFlow <span class="text-xs text-indigo-300 font-normal ml-1">AI Interactive Assistant</span></span>
         </div>
         <div class="flex items-center space-x-3">
             <button onclick="triggerNewIncomingEmail()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium py-2 px-4 rounded-lg flex items-center space-x-2 transition shadow">
@@ -26,7 +27,7 @@
             </button>
             <div id="apiStatus" class="text-xs px-3 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700 flex items-center space-x-2">
                 <span id="statusDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
-                <span id="statusText">Checking Backend...</span>
+                <span id="statusText">Simulation Engine Active</span>
             </div>
         </div>
     </header>
@@ -34,26 +35,26 @@
     <!-- Main Application Body -->
     <div class="flex-1 flex overflow-hidden">
 
-        <!-- Sidebar Navigation -->
-        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between p-4">
+        <!-- Sidebar Navigation (Drop Target Zone) -->
+        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between p-4 flex-shrink-0">
             <div class="space-y-6">
-                <!-- Mailboxes -->
+                <!-- System Mailboxes -->
                 <div>
                     <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-3">Mailboxes</div>
                     <nav class="space-y-1">
-                        <button onclick="switchView('inbox')" id="nav-inbox" class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg bg-indigo-50 text-indigo-600">
+                        <button onclick="switchView('inbox')" id="nav-inbox" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'Inbox')" class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg bg-indigo-50 text-indigo-600 transition">
                             <span class="flex items-center space-x-3"><i class="fa-solid fa-inbox w-4"></i><span>Inbox</span></span>
                             <span id="badge-inbox" class="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
                         </button>
-                        <button onclick="switchView('tasks')" id="nav-tasks" class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50">
+                        <button onclick="switchView('tasks')" id="nav-tasks" class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 transition">
                             <span class="flex items-center space-x-3"><i class="fa-solid fa-list-check w-4 text-emerald-500"></i><span>To-Do List</span></span>
                             <span id="badge-tasks" class="bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
                         </button>
-                        <button onclick="switchView('drafts')" id="nav-drafts" class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50">
+                        <button onclick="switchView('drafts')" id="nav-drafts" class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 transition">
                             <span class="flex items-center space-x-3"><i class="fa-solid fa-pen-to-square w-4 text-amber-500"></i><span>Drafts</span></span>
                             <span id="badge-drafts" class="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
                         </button>
-                        <button onclick="switchView('meetings')" id="nav-meetings" class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50">
+                        <button onclick="switchView('meetings')" id="nav-meetings" class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 transition">
                             <span class="flex items-center space-x-3"><i class="fa-solid fa-calendar-day w-4 text-purple-500"></i><span>Meetings</span></span>
                             <span id="badge-meetings" class="bg-purple-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
                         </button>
@@ -62,30 +63,26 @@
 
                 <!-- Custom Folders -->
                 <div>
-                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-3">Organized Folders</div>
-                    <nav class="space-y-1">
-                        <button onclick="switchFolder('Finance/Receipts')" id="nav-folder-finance" class="w-full flex items-center justify-between px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded-lg">
-                            <span class="flex items-center space-x-3"><i class="fa-solid fa-folder text-slate-400"></i><span>Finance / Receipts</span></span>
-                            <span id="badge-finance" class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
-                        </button>
-                        <button onclick="switchFolder('Projects/Q3')" id="nav-folder-projects" class="w-full flex items-center justify-between px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded-lg">
-                            <span class="flex items-center space-x-3"><i class="fa-solid fa-folder text-slate-400"></i><span>Projects / Q3</span></span>
-                            <span id="badge-projects" class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
-                        </button>
+                    <div class="flex justify-between items-center mb-2 px-3">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Folders</span>
+                        <button onclick="promptCreateFolder()" class="text-indigo-600 hover:text-indigo-800 text-xs font-bold flex items-center"><i class="fa-solid fa-plus mr-1"></i>New</button>
+                    </div>
+                    <nav class="space-y-1" id="foldersNav">
+                        <!-- Custom folders dynamically populated here -->
                     </nav>
                 </div>
             </div>
             
             <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-500">
-                <i class="fa-solid fa-shield-halved text-indigo-500 mr-1"></i> Gemini Background Engine Active
+                <i class="fa-solid fa-shield-halved text-indigo-500 mr-1"></i> Auto-Filing Engine Active
             </div>
         </aside>
 
         <!-- Dynamic Main Content Area -->
         <main class="flex-1 flex bg-white overflow-hidden" id="mainContainer">
             
-            <!-- Email List Column -->
-            <section class="w-96 border-r border-slate-200 flex flex-col bg-slate-50">
+            <!-- Email List Column (Hides when in Tasks/Drafts/Meetings) -->
+            <section id="emailListPane" class="w-96 border-r border-slate-200 flex flex-col bg-slate-50 flex-shrink-0">
                 <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-white">
                     <h2 id="viewTitle" class="font-bold text-slate-800 text-lg">Inbox</h2>
                     <span class="text-xs text-slate-400" id="itemCount">0 emails</span>
@@ -95,7 +92,7 @@
                 </div>
             </section>
 
-            <!-- Reading / Details View Pane -->
+            <!-- Main Display Pane -->
             <section class="flex-1 flex flex-col bg-white overflow-y-auto custom-scroll" id="readingPane">
                 <div class="flex-1 flex flex-col items-center justify-center text-slate-400 p-8">
                     <i class="fa-regular fa-envelope-open text-5xl mb-4 text-slate-300"></i>
@@ -108,15 +105,22 @@
     </div>
 
 <script>
-    // System State Storage
+    // State Store
     let emails = [];
     let tasks = [];
     let drafts = [];
-    let meetings = [];
+    let meetings = [
+        { id: 'm-ex1', title: 'Product Architecture Review', with: 'Engineering Team', time: 'Thu @ 10:00 AM (45 mins)', status: 'Confirmed' },
+        { id: 'm-ex2', title: '1:1 Sync with Department Head', with: 'Director', time: 'Fri @ 11:30 AM (30 mins)', status: 'Confirmed' }
+    ];
+    let customFolders = ['Finance/Receipts', 'Projects/Q3', 'Archive / Read Later'];
+    
     let activeView = 'inbox';
     let selectedEmailId = null;
+    let draggedEmailId = null;
+    let completedTasksCollapsed = true;
 
-    // Incoming Email Preset Pool
+    // Diversity-Enriched Sample Emails (6 Scenarios)
     const sampleEmails = [
         {
             sender: "Sarah Jenkins",
@@ -131,16 +135,34 @@
             body: "Your cloud statement for October 2026 is ready. Total billed: $42.50. This transaction has been processed automatically. No further action is required."
         },
         {
+            sender: "Tech Weekly Digest",
+            email: "newsletters@techdigest.io",
+            subject: "FYI: Top 10 Trends in AI Architecture for 2026",
+            body: "Here is your weekly digest of industry articles and news. No action required—just informative reading for your spare time!"
+        },
+        {
             sender: "David Chen",
             email: "david@partner.org",
             subject: "Partnership Agreement Draft Review",
             body: "Hey there, could you review page 3 of the partnership draft? We need your confirmation on section 4 before Thursday."
+        },
+        {
+            sender: "HR Operations",
+            email: "hr@company.com",
+            subject: "Annual Benefits Confirmation Notice",
+            body: "This is an automated confirmation of your updated health benefits choices for 2026/2027. File attached for your records."
+        },
+        {
+            sender: "Client Services",
+            email: "support@client.com",
+            subject: "Emergency Client Meeting Request",
+            body: "Hi Alex,\n\nCan we set up a quick 15-minute emergency call today at 4:30 PM to discuss the integration error?\n\nBest,\nMarcus"
         }
     ];
 
     let sampleIdx = 0;
 
-    // Trigger New Incoming Email Simulation
+    // Trigger Simulation
     async function triggerNewIncomingEmail() {
         const sample = sampleEmails[sampleIdx % sampleEmails.length];
         sampleIdx++;
@@ -153,14 +175,14 @@
             body: sample.body,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             unread: true,
-            folder: 'Inbox'
+            flagged: false,
+            folder: 'Inbox',
+            suggestedFolder: 'Archive / Read Later'
         };
 
-        // Call Gemini Backend Flask API
         await processEmailWithAI(newEmail);
     }
 
-    // Call Gemini Flash backend API
     async function processEmailWithAI(email) {
         try {
             const response = await fetch('/api/analyze', {
@@ -174,31 +196,30 @@
                 updateApiStatus(true);
                 applyAiResults(email, ai);
             } else {
-                throw new Error("API response error");
+                throw new Error("Using fallback simulation");
             }
         } catch (err) {
-            console.warn("Backend not reachable, running fallback rule engine:", err);
             updateApiStatus(false);
-            runFallbackRules(email);
+            runSimulationRules(email);
         }
 
         updateBadges();
+        renderFoldersNav();
         if (activeView === 'inbox' || activeView.startsWith('folder-')) {
             renderEmailList();
         }
     }
 
     function applyAiResults(email, ai) {
-        // Handle Filing logic
         if (ai.auto_file) {
             email.folder = ai.target_folder || 'Finance/Receipts';
             email.unread = false;
         } else {
             email.folder = 'Inbox';
+            email.suggestedFolder = ai.target_folder || 'Archive / Read Later';
         }
         emails.unshift(email);
 
-        // Auto-extract Tasks
         if (ai.tasks && ai.tasks.length > 0) {
             ai.tasks.forEach(t => {
                 tasks.push({
@@ -211,82 +232,128 @@
             });
         }
 
-        // Auto-extract Meetings
         if (ai.meeting && ai.meeting.requested) {
             meetings.push({
                 id: Date.now() + Math.random(),
                 title: ai.meeting.title || "Sync re: " + email.subject,
                 with: email.sender,
                 time: (ai.meeting.proposed_time || "Requested") + ` (${ai.meeting.duration || "30m"})`,
-                status: "Pending Calendar Confirmation"
+                status: "Pending Reservation"
             });
         }
 
-        // Auto-generate Draft Replies
         if (ai.draft_reply && ai.draft_reply.trim().length > 0) {
             drafts.push({
                 id: Date.now() + Math.random(),
                 to: email.sender,
                 subject: "Re: " + email.subject,
                 body: ai.draft_reply,
+                originalBody: email.body,
                 emailId: email.id
             });
         }
     }
 
-    function runFallbackRules(email) {
-        const isReceipt = email.body.toLowerCase().includes('statement') || email.body.toLowerCase().includes('invoice');
-        if (isReceipt) {
-            email.folder = 'Finance/Receipts';
+    // Comprehensive Local Rule Engine
+    function runSimulationRules(email) {
+        const bodyLower = email.body.toLowerCase();
+        
+        // Category 2: Auto-file immediate low-value items
+        if (bodyLower.includes('statement') || bodyLower.includes('invoice') || bodyLower.includes('benefits confirmation')) {
+            email.folder = bodyLower.includes('benefits') ? 'Archive / Read Later' : 'Finance/Receipts';
             email.unread = false;
-        } else {
+        } else if (bodyLower.includes('fyi:') || bodyLower.includes('top 10 trends')) {
+            // Category 2: Pure FYI read-then-file without actions
             email.folder = 'Inbox';
-            if (email.body.includes('update slide')) {
-                tasks.push({ id: Date.now(), title: "Update slide 4 with revised numbers", due: "Tomorrow Morning", completed: false });
+            email.suggestedFolder = 'Archive / Read Later';
+        } else {
+            // Actionable Email in Inbox
+            email.folder = 'Inbox';
+            email.suggestedFolder = 'Projects/Q3';
+
+            // Tasks
+            if (bodyLower.includes('update slide')) {
+                tasks.push({ id: Date.now() + 1, title: "Update slide 4 with revised numbers", due: "Tomorrow Morning", source: email.subject, completed: false });
             }
-            if (email.body.includes('Friday at 2:00 PM')) {
-                meetings.push({ id: Date.now(), title: "Sync re: Launch Plan", with: email.sender, time: "Friday @ 2:00 PM (30m)", status: "Pending" });
-                drafts.push({ id: Date.now(), to: email.sender, subject: "Re: " + email.subject, body: "Hi Sarah,\n\nFriday at 2:00 PM works great. I'll get slide 4 updated.\n\nBest,\nAlex", emailId: email.id });
+            if (bodyLower.includes('review page 3')) {
+                tasks.push({ id: Date.now() + 2, title: "Review page 3 of partnership draft", due: "Before Thursday", source: email.subject, completed: false });
+            }
+
+            // Meetings
+            if (bodyLower.includes('friday at 2:00 pm')) {
+                meetings.push({ id: Date.now() + 3, title: "Sync re: Launch Plan", with: email.sender, time: "Friday @ 2:00 PM (30m)", status: "Pending Reservation" });
+            } else if (bodyLower.includes('emergency call today')) {
+                meetings.push({ id: Date.now() + 4, title: "Emergency Integration Call", with: email.sender, time: "Today @ 4:30 PM (15m)", status: "Pending Reservation" });
+            }
+
+            // Drafts
+            if (bodyLower.includes('friday sync') || bodyLower.includes('update slide')) {
+                drafts.push({ id: Date.now() + 5, to: email.sender, subject: "Re: " + email.subject, body: `Hi Sarah,\n\nFriday at 2:00 PM works great. I'll update slide 4 ahead of our call.\n\nBest,\nAlex`,originalBody: email.body, emailId: email.id });
             }
         }
+
         emails.unshift(email);
     }
 
-    function updateApiStatus(isConnected) {
+    function updateApiStatus(isApiActive) {
         const dot = document.getElementById('statusDot');
         const text = document.getElementById('statusText');
-        if (isConnected) {
+        if (isApiActive) {
             dot.className = "w-2 h-2 rounded-full bg-emerald-400";
-            text.innerText = "Connected to Flask API";
+            text.innerText = "Connected to Live API";
         } else {
             dot.className = "w-2 h-2 rounded-full bg-amber-400";
-            text.innerText = "Offline Simulation Mode";
+            text.innerText = "Simulation Engine Active";
         }
     }
 
+    // View Switching & 2-Column Expansion Logic
     function switchView(view) {
+        // Execute Read-Then-File check when navigating away from an email
+        handleReadThenFileTrigger();
+
         activeView = view;
-        document.querySelectorAll('nav button').forEach(btn => {
-            btn.classList.remove('bg-indigo-50', 'text-indigo-600');
-            btn.classList.add('text-slate-600');
-        });
+        document.querySelectorAll('aside button').forEach(btn => btn.classList.remove('bg-indigo-50', 'text-indigo-600'));
 
         const activeNav = document.getElementById(`nav-${view}`);
         if (activeNav) activeNav.classList.add('bg-indigo-50', 'text-indigo-600');
 
-        const titleMap = { inbox: 'Inbox', tasks: 'To-Do List', drafts: 'Drafts', meetings: 'Meetings' };
-        document.getElementById('viewTitle').innerText = titleMap[view] || 'Inbox';
+        const emailListPane = document.getElementById('emailListPane');
 
-        if (view === 'tasks') renderTasksView();
-        else if (view === 'drafts') renderDraftsView();
-        else if (view === 'meetings') renderMeetingsView();
-        else renderEmailList();
+        if (view === 'tasks' || view === 'drafts' || view === 'meetings') {
+            // Collapse middle pane for spacious 2-column view
+            emailListPane.classList.add('hidden');
+            if (view === 'tasks') renderTasksView();
+            else if (view === 'drafts') renderDraftsView();
+            else if (view === 'meetings') renderMeetingsView();
+        } else {
+            // Restore 3-column email layout
+            emailListPane.classList.remove('hidden');
+            const titleMap = { inbox: 'Inbox' };
+            document.getElementById('viewTitle').innerText = titleMap[view] || 'Inbox';
+            renderEmailList();
+        }
     }
 
     function switchFolder(folderName) {
+        handleReadThenFileTrigger();
         activeView = 'folder-' + folderName;
+        document.getElementById('emailListPane').classList.remove('hidden');
         document.getElementById('viewTitle').innerText = folderName;
         renderEmailList(folderName);
+    }
+
+    // Execute "Read-Then-File" state transition when clicking off an email
+    function handleReadThenFileTrigger() {
+        if (!selectedEmailId) return;
+
+        const currentEmail = emails.find(e => e.id === selectedEmailId);
+        if (currentEmail && currentEmail.folder === 'Inbox' && !currentEmail.unread && !currentEmail.flagged) {
+            // Auto-file to suggested folder after being read
+            currentEmail.folder = currentEmail.suggestedFolder || 'Archive / Read Later';
+            console.log(`Auto-filed email #${currentEmail.id} to ${currentEmail.folder}`);
+        }
+        selectedEmailId = null;
     }
 
     function renderEmailList(targetFolder = 'Inbox') {
@@ -302,34 +369,65 @@
         }
 
         listContainer.innerHTML = filtered.map(e => `
-            <div onclick="selectEmail(${e.id})" class="p-4 cursor-pointer transition hover:bg-white ${selectedEmailId === e.id ? 'bg-white border-l-4 border-indigo-600 shadow-sm' : ''}">
+            <div draggable="true" ondragstart="handleDragStart(event, ${e.id})" onclick="selectEmail(${e.id})" 
+                class="p-4 cursor-pointer transition hover:bg-white relative border-b border-slate-200 ${selectedEmailId === e.id ? 'bg-white border-l-4 border-indigo-600 shadow-sm' : ''} ${e.unread ? 'bg-indigo-50/40 font-semibold' : ''}">
                 <div class="flex justify-between items-start mb-1">
-                    <span class="font-bold text-slate-800 text-sm">${e.sender}</span>
-                    <span class="text-xs text-slate-400">${e.timestamp}</span>
+                    <span class="text-slate-800 text-sm flex items-center">
+                        ${e.unread ? '<span class="w-2 h-2 rounded-full bg-indigo-600 mr-2"></span>' : ''}
+                        ${e.sender}
+                    </span>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs text-slate-400">${e.timestamp}</span>
+                        <button onclick="event.stopPropagation(); toggleFlag(${e.id})" class="text-xs ${e.flagged ? 'text-red-500' : 'text-slate-300 hover:text-slate-500'}">
+                            <i class="fa-solid fa-flag"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="text-sm font-semibold text-slate-700 truncate">${e.subject}</div>
+                <div class="text-sm text-slate-800 truncate">${e.subject}</div>
                 <div class="text-xs text-slate-500 truncate mt-1">${e.body.replace(/\n/g, ' ')}</div>
+                ${e.unread && e.folder === 'Inbox' ? `<span class="mt-2 inline-block text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">Auto-File Pending</span>` : ''}
+                ${e.flagged ? `<span class="mt-2 inline-block text-[10px] bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded">Auto-File Paused (Flagged)</span>` : ''}
             </div>
         `).join('');
     }
 
     function selectEmail(id) {
+        // Trigger read-then-file logic for previously selected email
+        if (selectedEmailId && selectedEmailId !== id) {
+            handleReadThenFileTrigger();
+        }
+
         selectedEmailId = id;
         const email = emails.find(e => e.id === id);
         if (email) email.unread = false;
 
         renderEmailList();
+        updateBadges();
+
         const associatedDraft = drafts.find(d => d.emailId === id);
         const readingPane = document.getElementById('readingPane');
 
         readingPane.innerHTML = `
-            <div class="p-6 border-b border-slate-200">
+            <div class="p-6 border-b border-slate-200 bg-white">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h1 class="text-xl font-bold text-slate-900">${email.subject}</h1>
+                        <div class="flex items-center space-x-3">
+                            <h1 class="text-xl font-bold text-slate-900">${email.subject}</h1>
+                            <button onclick="toggleFlag(${email.id})" class="text-sm ${email.flagged ? 'text-red-500' : 'text-slate-300 hover:text-slate-500'}">
+                                <i class="fa-solid fa-flag"></i> ${email.flagged ? 'Flagged (Auto-file Paused)' : 'Flag Email'}
+                            </button>
+                        </div>
                         <div class="text-sm text-slate-500 mt-1">From: <b class="text-slate-700">${email.sender}</b> (${email.email})</div>
                     </div>
-                    <span class="text-xs text-slate-400">${email.timestamp}</span>
+                    
+                    <!-- Move To Folder Dropdown -->
+                    <div class="flex items-center space-x-2">
+                        <select onchange="moveEmailToFolder(${email.id}, this.value)" class="text-xs bg-slate-100 border border-slate-300 rounded-lg px-3 py-1.5 font-medium text-slate-700 focus:outline-none">
+                            <option value="">Move to Folder...</option>
+                            ${customFolders.map(f => `<option value="${f}">${f}</option>`).join('')}
+                        </select>
+                        <span class="text-xs text-slate-400">${email.timestamp}</span>
+                    </div>
                 </div>
             </div>
 
@@ -341,7 +439,7 @@
                 ${associatedDraft ? `
                     <div class="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex justify-between items-center text-xs text-amber-800">
                         <span><i class="fa-solid fa-wand-magic-sparkles text-amber-500 mr-2"></i><b>AI Response Ready in Drafts</b></span>
-                        <button onclick="switchView('drafts')" class="font-bold text-amber-900 underline">View Draft</button>
+                        <button onclick="switchView('drafts')" class="font-bold text-amber-900 underline">Review Draft</button>
                     </div>
                 ` : ''}
                 <textarea placeholder="Write a reply..." class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="3"></textarea>
@@ -352,107 +450,347 @@
         `;
     }
 
+    function toggleFlag(id) {
+        const email = emails.find(e => e.id === id);
+        if (email) {
+            email.flagged = !email.flagged;
+            renderEmailList();
+            if (selectedEmailId === id) selectEmail(id);
+        }
+    }
+
+    function moveEmailToFolder(id, targetFolder) {
+        if (!targetFolder) return;
+        const email = emails.find(e => e.id === id);
+        if (email) {
+            email.folder = targetFolder;
+            selectedEmailId = null;
+            updateBadges();
+            renderEmailList();
+            document.getElementById('readingPane').innerHTML = `<div class="flex-1 flex flex-col items-center justify-center text-slate-400 p-8"><i class="fa-regular fa-envelope-open text-5xl mb-4 text-slate-300"></i><p class="text-base font-medium">Email moved to ${targetFolder}</p></div>`;
+        }
+    }
+
+    // Drag and Drop Logic
+    function handleDragStart(e, id) {
+        draggedEmailId = id;
+        e.dataTransfer.setData('text/plain', id);
+    }
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.currentTarget.classList.add('drag-over');
+    }
+    function handleDragLeave(e) {
+        e.currentTarget.classList.remove('drag-over');
+    }
+    function handleDrop(e, targetFolder) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('drag-over');
+        if (draggedEmailId) {
+            moveEmailToFolder(draggedEmailId, targetFolder);
+            draggedEmailId = null;
+        }
+    }
+
+    // Render Tasks View with Collapsible Completed Section
     function renderTasksView() {
         const pane = document.getElementById('readingPane');
-        document.getElementById('emailList').innerHTML = `<div class="p-4 text-xs text-slate-500">Showing background extracted tasks</div>`;
-        
+        const activeTasks = tasks.filter(t => !t.completed);
+        const completedTasks = tasks.filter(t => t.completed);
+
         pane.innerHTML = `
-            <div class="p-6">
-                <h2 class="text-xl font-bold text-slate-900 mb-4 flex items-center">
-                    <i class="fa-solid fa-list-check text-emerald-500 mr-2"></i> Auto-Generated To-Do List
-                </h2>
-                <p class="text-xs text-slate-500 mb-6">Tasks automatically detected and created from your incoming emails.</p>
-                <div class="space-y-3">
-                    ${tasks.length === 0 ? '<p class="text-slate-400 text-sm">No tasks created yet.</p>' : ''}
-                    ${tasks.map((t, i) => `
-                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
+            <div class="p-8 max-w-4xl w-full mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900 flex items-center">
+                            <i class="fa-solid fa-list-check text-emerald-500 mr-3"></i> To-Do Manager
+                        </h1>
+                        <p class="text-xs text-slate-500 mt-1">Tasks automatically created from email context.</p>
+                    </div>
+                    <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">${activeTasks.length} Pending</span>
+                </div>
+
+                <!-- Active Tasks -->
+                <div class="space-y-3 mb-8">
+                    ${activeTasks.length === 0 ? '<p class="text-slate-400 text-sm py-4">No active pending tasks.</p>' : ''}
+                    ${activeTasks.map(t => `
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between shadow-sm hover:border-slate-300 transition">
                             <div class="flex items-center space-x-3">
-                                <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTask(${i})" class="w-4 h-4 text-emerald-600 rounded">
-                                <span class="text-sm font-medium ${t.completed ? 'line-through text-slate-400' : 'text-slate-800'}">${t.title}</span>
+                                <input type="checkbox" onchange="toggleTask(${t.id})" class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                                <div>
+                                    <div class="text-sm font-semibold text-slate-800">${t.title}</div>
+                                    <div class="text-xs text-slate-400 mt-0.5">Source: ${t.source || 'Email Assistant'}</div>
+                                </div>
                             </div>
-                            <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-1 rounded-full">${t.due}</span>
+                            <span class="text-xs bg-slate-200 text-slate-700 font-semibold px-2.5 py-1 rounded-full">${t.due}</span>
                         </div>
                     `).join('')}
                 </div>
+
+                <!-- Collapsible Completed Section -->
+                ${completedTasks.length > 0 ? `
+                    <div class="border-t border-slate-200 pt-6">
+                        <button onclick="toggleCompletedAccordion()" class="flex items-center space-x-2 text-slate-500 font-bold text-sm hover:text-slate-700 mb-4">
+                            <i class="fa-solid ${completedTasksCollapsed ? 'fa-chevron-right' : 'fa-chevron-down'} text-xs"></i>
+                            <span>Completed Tasks (${completedTasks.length})</span>
+                        </button>
+                        
+                        <div class="${completedTasksCollapsed ? 'hidden' : ''} space-y-2">
+                            ${completedTasks.map(t => `
+                                <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between opacity-60">
+                                    <div class="flex items-center space-x-3">
+                                        <input type="checkbox" checked onchange="toggleTask(${t.id})" class="w-4 h-4 text-emerald-600 rounded">
+                                        <span class="text-sm line-through text-slate-500">${t.title}</span>
+                                    </div>
+                                    <span class="text-xs text-slate-400">Done</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
             </div>
         `;
     }
 
-    function renderDraftsView() {
-        const pane = document.getElementById('readingPane');
-        document.getElementById('emailList').innerHTML = `<div class="p-4 text-xs text-slate-500">Showing AI prepared drafts</div>`;
-
-        pane.innerHTML = `
-            <div class="p-6">
-                <h2 class="text-xl font-bold text-slate-900 mb-4 flex items-center">
-                    <i class="fa-solid fa-pen-to-square text-amber-500 mr-2"></i> AI Generated Drafts
-                </h2>
-                <div class="space-y-4">
-                    ${drafts.length === 0 ? '<p class="text-slate-400 text-sm">No pending drafts.</p>' : ''}
-                    ${drafts.map((d, i) => `
-                        <div class="p-5 border border-slate-200 rounded-lg bg-slate-50 space-y-3">
-                            <div class="flex justify-between items-center text-xs text-slate-500">
-                                <span>To: <b>${d.to}</b></span>
-                                <span class="text-amber-600 font-semibold">Ready for Review</span>
-                            </div>
-                            <div class="font-bold text-sm text-slate-800">${d.subject}</div>
-                            <textarea class="w-full p-3 bg-white border border-slate-200 rounded text-sm text-slate-700 focus:outline-none" rows="4">${d.body}</textarea>
-                            <div class="flex justify-end space-x-2">
-                                <button onclick="sendDraft(${i})" class="bg-emerald-600 text-white text-xs font-semibold px-4 py-2 rounded hover:bg-emerald-500">Approve & Send</button>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
+    function toggleTask(id) {
+        const task = tasks.find(t => t.id === id);
+        if (task) task.completed = !task.completed;
+        renderTasksView();
+        updateBadges();
     }
 
-    function renderMeetingsView() {
-        const pane = document.getElementById('readingPane');
-        pane.innerHTML = `
-            <div class="p-6">
-                <h2 class="text-xl font-bold text-slate-900 mb-4 flex items-center">
-                    <i class="fa-solid fa-calendar-day text-purple-500 mr-2"></i> Detected Meeting Requests
-                </h2>
-                <div class="space-y-3">
-                    ${meetings.length === 0 ? '<p class="text-slate-400 text-sm">No meeting requests.</p>' : ''}
-                    ${meetings.map(m => `
-                        <div class="p-4 border border-slate-200 rounded-lg bg-slate-50 flex justify-between items-center">
-                            <div>
-                                <div class="font-bold text-sm text-slate-800">${m.title}</div>
-                                <div class="text-xs text-slate-500 mt-1">With: ${m.with} | <b>${m.time}</b></div>
-                            </div>
-                            <button onclick="alert('Invite confirmed on calendar!')" class="bg-purple-600 text-white text-xs font-semibold px-4 py-2 rounded hover:bg-purple-500">Confirm & Reserve Slot</button>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    function toggleTask(idx) {
-        tasks[idx].completed = !tasks[idx].completed;
+    function toggleCompletedAccordion() {
+        completedTasksCollapsed = !completedTasksCollapsed;
         renderTasksView();
     }
 
+    // Render Drafts View (Full Width 2-Column)
+function renderDraftsView() {
+    const pane = document.getElementById('readingPane');
+    pane.innerHTML = `
+        <div class="p-8 max-w-4xl w-full mx-auto">
+            <h1 class="text-2xl font-bold text-slate-900 mb-2 flex items-center">
+                <i class="fa-solid fa-pen-to-square text-amber-500 mr-3"></i> AI Response Drafts
+            </h1>
+            <p class="text-xs text-slate-500 mb-6">Send as is, edit directly in the text box, or instruct the AI to rewrite it.</p>
+
+            <div class="space-y-6">
+                ${drafts.length === 0 ? '<p class="text-slate-400 text-sm py-4">No drafts pending review.</p>' : ''}
+                ${drafts.map((d, i) => `
+                    <div class="p-6 border border-slate-200 rounded-xl bg-slate-50 shadow-sm space-y-4">
+                        <div class="flex justify-between items-center text-xs text-slate-500 border-b border-slate-200 pb-3">
+                            <span>To: <b class="text-slate-700">${d.to}</b></span>
+                            <span class="bg-amber-100 text-amber-800 font-bold px-2.5 py-0.5 rounded-full">AI Prepared</span>
+                        </div>
+                        <div class="font-bold text-base text-slate-800">${d.subject}</div>
+                        
+                        <!-- Editable Draft Area -->
+                        <textarea id="draft-text-${i}" oninput="drafts[${i}].body = this.value" class="w-full p-4 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none" rows="5">${d.body}</textarea>
+                        
+                        <!-- AI Redraft Prompt Bar -->
+                        <div class="bg-indigo-50/70 border border-indigo-100 rounded-lg p-3 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[11px] font-bold text-indigo-700 flex items-center">
+                                    <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> Refine with AI
+                                </span>
+                                <div class="flex gap-1.5">
+                                    <button onclick="quickRedraft(${i}, 'Make it shorter and more concise')" class="text-[10px] bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded transition">Shorter</button>
+                                    <button onclick="quickRedraft(${i}, 'Make the tone more formal')" class="text-[10px] bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded transition">More Formal</button>
+                                    <button onclick="quickRedraft(${i}, 'Politely decline and suggest next week')" class="text-[10px] bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded transition">Decline</button>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="redraft-prompt-${i}" placeholder="e.g., Ask if we can push the meeting to 3:00 PM instead..." 
+                                    onkeydown="if(event.key === 'Enter') handleRedraft(${i})"
+                                    class="flex-1 text-xs p-2 bg-white border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <button id="redraft-btn-${i}" onclick="handleRedraft(${i})" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition flex items-center space-x-1">
+                                    <span>Redraft</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end space-x-3 pt-1">
+                            <button onclick="sendDraft(${i})" class="bg-emerald-600 text-white text-xs font-semibold px-5 py-2.5 rounded-lg hover:bg-emerald-500 transition">Approve & Send</button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
     function sendDraft(idx) {
-        alert("Draft approved and sent!");
+        alert("Draft response approved and sent!");
         drafts.splice(idx, 1);
         updateBadges();
         renderDraftsView();
     }
 
-    function updateBadges() {
-        document.getElementById('badge-inbox').innerText = emails.filter(e => e.folder === 'Inbox').length;
-        document.getElementById('badge-tasks').innerText = tasks.length;
-        document.getElementById('badge-drafts').innerText = drafts.length;
-        document.getElementById('badge-meetings').innerText = meetings.length;
-
-        document.getElementById('badge-finance').innerText = emails.filter(e => e.folder === 'Finance/Receipts').length;
-        document.getElementById('badge-projects').innerText = emails.filter(e => e.folder === 'Projects/Q3').length;
+    function quickRedraft(idx, presetInstruction) {
+    document.getElementById(`redraft-prompt-${idx}`).value = presetInstruction;
+    handleRedraft(idx);
     }
 
-    // Auto-load initial sample email on app boot
+    async function handleRedraft(idx) {
+        const promptInput = document.getElementById(`redraft-prompt-${idx}`);
+        const btn = document.getElementById(`redraft-btn-${idx}`);
+        const textarea = document.getElementById(`draft-text-${idx}`);
+        const instruction = promptInput.value.trim();
+
+        if (!instruction) return;
+
+        const draft = drafts[idx];
+        const currentText = textarea.value;
+
+        // Show loading state
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Rewriting...`;
+
+        try {
+            const response = await fetch('/api/redraft', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    original_email: draft.originalBody || '',
+                    current_draft: currentText,
+                    instruction: instruction
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                updateApiStatus(true);
+                draft.body = data.new_draft;
+            } else {
+                throw new Error("Fallback to local redraft simulation");
+            }
+        } catch (err) {
+            updateApiStatus(false);
+            draft.body = simulateRedraft(draft, instruction);
+        }
+
+        // Update UI & clear prompt input
+        textarea.value = draft.body;
+        promptInput.value = '';
+        btn.disabled = false;
+        btn.innerHTML = `<span>Redraft</span>`;
+    }
+
+    // Deterministic fallback rules so you can demo redrafting offline
+    function simulateRedraft(draft, instruction) {
+        const inst = instruction.toLowerCase();
+        const firstName = draft.to.split(' ')[0];
+
+        if (inst.includes('short') || inst.includes('concise')) {
+            return `Hi ${firstName},\n\nWorks for me—I'll have slide 4 updated before we meet.\n\nBest,\nAlex`;
+        }
+        if (inst.includes('formal')) {
+            return `Dear ${draft.to},\n\nThank you for reaching out. I confirm my availability for Friday at 2:00 PM and will ensure slide 4 is updated with the revised figures prior to our discussion.\n\nKind regards,\nAlex`;
+        }
+        if (inst.includes('decline') || inst.includes('next week')) {
+            return `Hi ${firstName},\n\nUnfortunately, I won't be able to make Friday at 2:00 PM. Could we look at rescheduling for early next week instead? I'll still send over the updated slide 4 tomorrow.\n\nBest,\nAlex`;
+        }
+        if (inst.includes('3:00') || inst.includes('3 pm') || inst.includes('push')) {
+            return `Hi ${firstName},\n\nCould we push our Friday sync slightly to 3:00 PM instead? I'll still make sure slide 4 is updated ahead of time.\n\nBest,\nAlex`;
+        }
+
+        // Generic fallback incorporating custom prompt
+        return `Hi ${firstName},\n\n[Updated per your note: "${instruction}"]\n\nI'll get slide 4 updated with the revised numbers and catch up with you soon.\n\nBest,\nAlex`;
+    }
+
+    // Render Interactive Calendar & Meetings View
+    function renderMeetingsView() {
+        const pane = document.getElementById('readingPane');
+        pane.innerHTML = `
+            <div class="p-8 max-w-5xl w-full mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900 flex items-center">
+                            <i class="fa-solid fa-calendar-day text-purple-500 mr-3"></i> Calendar & Meeting Triage
+                        </h1>
+                        <p class="text-xs text-slate-500 mt-1">Review AI-detected meeting proposals alongside existing schedule slots.</p>
+                    </div>
+                </div>
+
+                <!-- Split View: Schedule Grid + AI Invites -->
+                <div class="grid grid-cols-3 gap-6">
+                    
+                    <!-- Weekly Calendar Grid -->
+                    <div class="col-span-2 border border-slate-200 rounded-xl p-5 bg-slate-50">
+                        <h3 class="font-bold text-sm text-slate-700 mb-4 flex items-center">
+                            <i class="fa-solid fa-calendar-week mr-2 text-indigo-500"></i> Scheduled Events (This Week)
+                        </h3>
+                        <div class="space-y-3">
+                            ${meetings.map(m => `
+                                <div class="p-4 bg-white border-l-4 ${m.status === 'Confirmed' ? 'border-indigo-600' : 'border-purple-500'} rounded-r-lg shadow-sm flex justify-between items-center">
+                                    <div>
+                                        <div class="font-bold text-sm text-slate-800">${m.title}</div>
+                                        <div class="text-xs text-slate-500 mt-0.5">With: <b>${m.with}</b></div>
+                                    </div>
+                                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${m.status === 'Confirmed' ? 'bg-indigo-50 text-indigo-700' : 'bg-purple-100 text-purple-800'}">${m.time}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- AI Invite Action Panel -->
+                    <div class="border border-slate-200 rounded-xl p-5 bg-white">
+                        <h3 class="font-bold text-sm text-slate-700 mb-4 flex items-center">
+                            <i class="fa-solid fa-clock-rotate-left mr-2 text-amber-500"></i> Pending Requests
+                        </h3>
+                        ${meetings.filter(m => m.status !== 'Confirmed').length === 0 ? '<p class="text-xs text-slate-400">No pending meeting requests.</p>' : ''}
+                        ${meetings.filter(m => m.status !== 'Confirmed').map(m => `
+                            <div class="p-4 border border-purple-200 bg-purple-50/50 rounded-lg space-y-3 mb-3">
+                                <div class="font-bold text-xs text-purple-900">${m.title}</div>
+                                <div class="text-xs text-slate-600">Time: <b>${m.time}</b></div>
+                                <button onclick="confirmMeeting('${m.id}')" class="w-full bg-purple-600 text-white text-xs font-semibold py-2 rounded-lg hover:bg-purple-500 transition">Confirm & Reserve Slot</button>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                </div>
+            </div>
+        `;
+    }
+
+    function confirmMeeting(id) {
+        const m = meetings.find(item => item.id === id);
+        if (m) {
+            m.status = 'Confirmed';
+            renderMeetingsView();
+            updateBadges();
+        }
+    }
+
+    // Dynamic Custom Folder Creator
+    function promptCreateFolder() {
+        const name = prompt("Enter new folder name:");
+        if (name && !customFolders.includes(name)) {
+            customFolders.push(name);
+            renderFoldersNav();
+        }
+    }
+
+    function renderFoldersNav() {
+        const nav = document.getElementById('foldersNav');
+        nav.innerHTML = customFolders.map(f => `
+            <button onclick="switchFolder('${f}')" id="nav-folder-${f}" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${f}')" class="w-full flex items-center justify-between px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded-lg transition">
+                <span class="flex items-center space-x-3"><i class="fa-solid fa-folder text-slate-400"></i><span>${f}</span></span>
+                <span class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded-full font-bold">${emails.filter(e => e.folder === f).length}</span>
+            </button>
+        `).join('');
+    }
+
+    function updateBadges() {
+        document.getElementById('badge-inbox').innerText = emails.filter(e => e.folder === 'Inbox').length;
+        document.getElementById('badge-tasks').innerText = tasks.filter(t => !t.completed).length;
+        document.getElementById('badge-drafts').innerText = drafts.length;
+        document.getElementById('badge-meetings').innerText = meetings.filter(m => m.status !== 'Confirmed').length;
+        renderFoldersNav();
+    }
+
+    // Boot Initialization
+    renderFoldersNav();
     triggerNewIncomingEmail();
 </script>
 </body>

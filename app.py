@@ -83,6 +83,43 @@ def analyze():
 
     return jsonify(json.loads(response.text))
 
+    @app.route('/api/redraft', methods=['POST'])
+    def redraft():
+        data = request.get_json()
+        original_email = data.get('original_email', '')
+        current_draft = data.get('current_draft', '')
+        instruction = data.get('instruction', '')
+
+        if not client:
+            return jsonify({"error": "No API key configured. Using local simulation."}), 503
+
+        prompt = f"""
+        Rewrite the following email draft based on the user's instruction.
+        Return ONLY the updated email body text, with no extra conversational filler or subject line.
+
+        Original Email Received:
+        {original_email}
+
+        Current Draft:
+        {current_draft}
+
+        User's Refinement Instruction:
+        {instruction}
+        """
+
+        models_to_try = ['gemini-1.5-flash', 'gemini-1.5-pro']
+        for model_name in models_to_try:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt
+                )
+                return jsonify({"new_draft": response.text.strip()})
+            except Exception as e:
+                print(f"⚠️ {model_name} unavailable for redraft: {e}")
+
+        return jsonify({"error": "API temporarily unavailable. Fallback to simulation."}), 503 
+
 if __name__ == '__main__':
     print("Starting AI Assistant Server on http://localhost:5000")
     app.run(port=5000, debug=True)
