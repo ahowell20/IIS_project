@@ -26,18 +26,20 @@ In real world, this would be a plugin for email clients such as Outlook of Gmail
 
 
 **Running or inspecting the work:**
-If you have an API key, create a .env file and add it in there: 
+If you have a Google Gemini API key, create a `.env` file to the root directory and add the key in there. 
 
-GEMINI_API_KEY=(your API key here)
+```GEMINI_API_KEY=(your API key here)```
 
 Set up a virtual environment for it to run on:
 
-pip install python-dotenv
-python -m venv venv
-.\venv\Scripts\activate.bat
+```python -m venv venv```
+```.\venv\Scripts\activate.bat```
+
+The install the following packages:
+```pip install flask google-genai python-dotenv```
 
 Then in your terminal, run the app and open localhost:
-python app.py
+```python app.py```
 
 To start the simulation, click on 'Simulate Incoming Email'. If an API connection has been established, a green dot will show in the top right, else it will be orange for complete simulation.
 
